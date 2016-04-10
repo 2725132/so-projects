@@ -1,0 +1,5 @@
+# depslib dependency file v1.0
+1459815872 source:/home/felipe/Documentos/gitprojects/c-shell/shell/main.c
+	<stdio.h>
+	<stdlib.h>
+
