@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1460335125 source:/home/felipe/Documentos/gitprojects/so-projects/text-editor/main.c
+	<stdio.h>
+	<semaphore.h>
+	<pthread.h>
+	<stdlib.h>
+	<unistd.h>
+
