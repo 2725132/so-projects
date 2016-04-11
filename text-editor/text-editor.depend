@@ -6,3 +6,10 @@
 	<stdlib.h>
 	<unistd.h>
 
+1460408532 source:/home/felipe.gouvea/Documentos/so-projects/text-editor/main.c
+	<stdio.h>
+	<semaphore.h>
+	<pthread.h>
+	<stdlib.h>
+	<unistd.h>
+
