@@ -13,3 +13,10 @@
 	<stdlib.h>
 	<unistd.h>
 
+1460677119 source:/home/felipe.gouvea/so-projects/text-editor/main.c
+	<stdio.h>
+	<semaphore.h>
+	<pthread.h>
+	<stdlib.h>
+	<unistd.h>
+
