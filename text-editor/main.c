@@ -3,27 +3,16 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
-#define max_line 42
+#define max_line 30
 #define N 10000000
 pthread_mutex_t lock_buffer;
 char buffer[N];
-sem_t vazio; // <- N
-sem_t cheio; // <- 0
+sem_t readytoread;
+sem_t readytoprocess;
+sem_t readytosave; // <- N
 int in = 0,  //posicao p/ inserir no buffer itens
     out= 0;  //posicao p/ remover do buffer itens
 long int it;
-void *processador() {
-
-	while (1) {
-		sem_wait(&cheio);
-		pthread_mutex_lock(&lock_buffer);
-        processar();
-        fflush(stdout);
-		pthread_mutex_unlock(&lock_buffer);
-		sem_post(&vazio);
-		//imprime_buffer();
-	}
-}
 
 void processar(){
     int n = 4;
@@ -41,15 +30,18 @@ void processar(){
         int teto = m/max_line;
         //printf("M MAIOR QUE N  %d\n", teto);
     }
-    int i,j;
-    for ( i = 0, j = 1; i < m; i++,j++){
-        if(i == max_line) {
-            temp2[i] = '\n';
-            j--;
+    //printf("IN = %d", in);
+    int i;
+    int x = n = 0;
+    for ( i = 0; i <= m; i++){
+        temp2[i+x] = temp[i];
+        if((i+1) % max_line == 0) {
+            printf("%d\n", i);
+            x++;
+            //printf("i = %d\n",);
+            temp2[i+x] = '\n';
+
         }
-        else if(temp[j] ){
-            temp2[i] = temp[j];
-             }// printf("erro");
 
     }
     strcpy(buffer,temp2);
@@ -58,20 +50,27 @@ void processar(){
     //printf("String copiada %s\n", temp);
     //exit(EXIT_SUCCESS);
 }
+void inserir_espaco(int qtd){
+
+}
 char * le_string(){
 
     //printf("Lendo entrada\n");
     char * entrada = (char*)malloc(sizeof(char));
-    it = 1;
-    entrada[0] = '!';
+    it = 0;
+    //entrada[0] = '!';
 
     while(1){
         scanf("%c", &entrada[it]);
-        if(entrada[it-1] == '.')break;
-        in = (in + 1) % N;
+        if(entrada[it] == '.'){
+            it++;
+            break;
+        }
         it++;
-    }
 
+        //printf("ERRO\n");
+    }
+    in = it;
 
     /* FUNÇÃO DE TESTE
     while(it<=1) {
@@ -83,27 +82,7 @@ char * le_string(){
     */
     return entrada;
 }
-void *leitor() {
 
-    char * entrada;
-
-	while (1) {
-
-        entrada = le_string();
-		sem_wait(&vazio);
-		//printf("Lendo..\n");
-		pthread_mutex_lock(&lock_buffer);
-
-        memcpy(buffer, entrada, it);
-        fflush(stdout);
-
-		pthread_mutex_unlock(&lock_buffer);
-		sem_post(&cheio);
-
-        //printf("\nTerminou de ler\n");
-        //imprime_buffer();
-	}
-}
 
 
 void imprime_buffer(){
@@ -111,15 +90,74 @@ void imprime_buffer(){
 }
 
 
+
+void *processador() {
+
+	while (1) {
+		sem_wait(&readytoprocess);
+		//pthread_mutex_lock(&lock_buffer);
+        processar();
+        fflush(stdout);
+		//pthread_mutex_unlock(&lock_buffer);
+		sem_post(&readytosave);
+		//imprime_buffer();
+	}
+}
+void *leitor() {
+
+    char * entrada;
+
+	while (1) {
+
+        entrada = le_string();
+		sem_wait(&readytoread);
+		printf("Lendo..\n");
+		//pthread_mutex_lock(&lock_buffer);
+
+        memcpy(buffer, entrada, in);
+        fflush(stdout);
+
+		//pthread_mutex_unlock(&lock_buffer);
+		sem_post(&readytoprocess);
+
+        //printf("\nTerminou de ler\n");
+        //imprime_buffer();
+	}
+}
+void *salvar(){
+    FILE * file;
+    while (1) {
+		sem_wait(&readytosave);
+        printf("Salvando...\n");
+		//pthread_mutex_lock(&lock_buffer);
+
+        file = fopen ("myfile.txt","a");
+        if (file!=NULL){
+            fputs (buffer, file);
+            fclose (file);
+        }
+
+        fflush(stdout);
+		//pthread_mutex_unlock(&lock_buffer);
+		sem_post(&readytoread);
+	}
+}
+
+
+
 int main()
 {
-    sem_init(&vazio, 0 , 1);
-    sem_init(&cheio, 0 , 0);
+    sem_init(&readytoread, 0 , 1);
+    sem_init(&readytoprocess, 0 , 0);
+    sem_init(&readytosave, 0 , 0);
+
     pthread_t t_leitor;
     pthread_t t_processador;
+    pthread_t t_salvador;
 
     pthread_create(&t_leitor, NULL, leitor, NULL);
     pthread_create(&t_processador, NULL, processador, NULL);
+    pthread_create(&t_salvador, NULL, salvar, NULL);
 
     pthread_join(t_leitor, NULL);
     pthread_join(t_processador, NULL);
